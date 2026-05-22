@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>C2PA Verify — Groupe 2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --cream:    #faf8f4;
+    --white:    #ffffff;
+    --ink:      #1a1814;
+    --ink-soft: #6b6760;
+    --border:   #e8e4dc;
+    --gold:     #c9a84c;
+    --gold-lt:  #f5edd8;
+    --green:    #2d6a4f;
+    --green-lt: #d8f0e6;
+    --red:      #b5312b;
+    --red-lt:   #fde8e7;
+    --blue:     #2b4c7e;
+    --blue-lt:  #e4ecf7;
+    --amber:    #b45309;
+    --amber-lt: #fef3c7;
+    --radius:   14px;
+    --shadow:   0 2px 20px rgba(26,24,20,.07);
+    --shadow-lg:0 8px 40px rgba(26,24,20,.12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--ink);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { color: var(--white); }
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    letter-spacing: -.3px;
+  }
+  .logo-text span { color: var(--gold); }
+  .badge {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .5px;
+    color: var(--ink-soft);
+    background: var(--cream);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+    width: 100%;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 5vw, 48px);
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    margin-bottom: 16px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .hero p {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    margin: 28px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--gold);
+    background: var(--gold-lt);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-icon {
+    width: 52px; height: 52px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    transition: transform .2s;
+  }
+  .drop-zone:hover .drop-icon { transform: translateY(-3px); }
+  .drop-zone h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .drop-zone p {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .formats {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .fmt-tag {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .3px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+  }
+
+  /* file preview */
+  .file-preview {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 28px;
+    border-top: 1px solid var(--border);
+    background: var(--cream);
+  }
+  .file-preview.show { display: flex; }
+  .file-thumb {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .file-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 13px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .file-size { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .file-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-soft); padding: 4px;
+    border-radius: 6px; transition: background .15s;
+  }
+  .file-remove:hover { background: var(--border); }
+
+  /* submit btn */
+  .submit-wrap { padding: 0 28px 28px; }
+  .btn-analyze {
+    width: 100%;
+    padding: 14px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background .2s, transform .1s;
+  }
+  .btn-analyze:hover:not(:disabled) { background: #2e2b26; }
+  .btn-analyze:active:not(:disabled) { transform: scale(.99); }
+  .btn-analyze:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading .spinner { display: block; }
+  .loading .btn-label { display: none; }
+
+  /* ── RESULTS ── */
+  #results { display: none; }
+  #results.show {
+    display: block;
+    animation: fadeUp .4s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* score card */
+  .score-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .score-header {
+    padding: 28px 32px 24px;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .score-ring {
+    position: relative;
+    width: 96px; height: 96px;
+    flex-shrink: 0;
+  }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .track { fill: none; stroke: var(--border); stroke-width: 7; }
+  .score-ring .fill  {
+    fill: none; stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1);
+  }
+  .score-num {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+  }
+  .score-meta h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+  .score-meta p { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+  .label-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    margin-bottom: 8px;
+  }
+  .label-pill .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+
+  /* label colors */
+  .lbl-fort    { background: var(--green-lt); color: var(--green); }
+  .lbl-fort .dot { background: var(--green); }
+  .lbl-moyen   { background: var(--blue-lt); color: var(--blue); }
+  .lbl-moyen .dot { background: var(--blue); }
+  .lbl-faible  { background: var(--amber-lt); color: var(--amber); }
+  .lbl-faible .dot { background: var(--amber); }
+  .lbl-critique { background: var(--red-lt); color: var(--red); }
+  .lbl-critique .dot { background: var(--red); }
+
+  /* ring colors */
+  .ring-fort     { stroke: var(--green); }
+  .ring-moyen    { stroke: var(--blue); }
+  .ring-faible   { stroke: var(--amber); }
+  .ring-critique { stroke: var(--red); }
+
+  /* details grid */
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .detail-cell {
+    background: var(--white);
+    padding: 18px 24px;
+  }
+  .detail-cell:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .detail-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .detail-value {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+  .detail-value.ok  { color: var(--green); }
+  .detail-value.no  { color: var(--ink-soft); }
+  .detail-value.bad { color: var(--red); }
+
+  /* assertions list */
+  .assertion-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 4px;
+  }
+  .assertion-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  /* watermark card */
+  .wm-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .wm-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .wm-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .wm-row:last-child { border-bottom: none; }
+  .wm-key { color: var(--ink-soft); }
+  .wm-val { font-weight: 500; }
+
+  /* reset btn */
+  .btn-reset {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-reset:hover { background: var(--white); }
+
+  /* error */
+  .error-box {
+    background: var(--red-lt);
+    border: 1px solid #f5c0be;
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    font-size: 14px;
+    color: var(--red);
+    display: none;
+    margin-bottom: 20px;
+  }
+  .error-box.show { display: block; animation: fadeUp .3s ease; }
+
+  /* footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 40px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 0 20px; }
+    main { padding: 36px 16px 60px; }
+    .details-grid { grid-template-columns: 1fr; }
+    .score-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <span class="logo-text">C2PA<span>Verify</span></span>
+  </div>
+  <span class="badge">GROUPE 2</span>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Vérifiez l'<em>authenticité</em><br>de vos médias</h1>
+    <p>Analyse cryptographique C2PA, détection de watermark invisible et score de confiance en quelques secondes.</p>
+  </div>
+
+  <!-- Upload -->
+  <div class="upload-card">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,.mp4,.mov"/>
+      <div class="drop-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+        </svg>
+      </div>
+      <h3>Glissez un fichier ou cliquez pour parcourir</h3>
+      <p>Analysez un média pour vérifier sa provenance</p>
+      <div class="formats">
+        <span class="fmt-tag">JPG</span>
+        <span class="fmt-tag">PNG</span>
+        <span class="fmt-tag">WEBP</span>
+        <span class="fmt-tag">MP4</span>
+        <span class="fmt-tag">MOV</span>
+      </div>
+    </div>
+
+    <div class="file-preview" id="filePreview">
+      <div class="file-thumb" id="fileThumb">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.8">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>
+        </svg>
+      </div>
+      <div class="file-info">
+        <div class="file-name" id="fileName">—</div>
+        <div class="file-size" id="fileSize">—</div>
+      </div>
+      <button class="file-remove" id="fileRemove" title="Retirer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="submit-wrap">
+      <button class="btn-analyze" id="btnAnalyze" disabled>
+        <div class="spinner"></div>
+        <span class="btn-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-right:4px;vertical-align:middle">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Analyser le média
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <div class="score-card">
+      <div class="score-header">
+        <div class="score-ring">
+          <svg width="96" height="96" viewBox="0 0 96 96">
+            <circle class="track" cx="48" cy="48" r="40"/>
+            <circle class="fill" id="ringFill" cx="48" cy="48" r="40"
+              stroke-dasharray="251.2"
+              stroke-dashoffset="251.2"/>
+          </svg>
+          <div class="score-num" id="scoreNum">—</div>
+        </div>
+        <div class="score-meta">
+          <div class="label-pill" id="labelPill">
+            <span class="dot"></span>
+            <span id="labelText">—</span>
+          </div>
+          <h2 id="scoreTitle">Analyse terminée</h2>
+          <p id="scoreDesc">—</p>
+        </div>
+      </div>
+
+      <div class="details-grid">
+        <div class="detail-cell">
+          <div class="detail-label">Fichier analysé</div>
+          <div class="detail-value" id="resFileName">—</div>
+        </div>
+        <div class="detail-cell">
+          <div class="detail-label">Horodatage</div>
+          <div class="detail-value" id="resTimestamp">—</div>
+        </div>
+        <div class="detail-cell">
+          <div class="detail-label">Manifeste C2PA</div>
+          <div class="detail-value" id="resProvenance">—</div>
+        </div>
+        <div class="detail-cell">
+          <div class="detail-label">Assertions C2PA</div>
+          <div class="detail-value" id="resAssertions">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Watermark block -->
+    <div class="wm-card">
+      <h3>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Watermark invisible
+      </h3>
+      <div class="wm-row">
+        <span class="wm-key">Détecté</span>
+        <span class="wm-val" id="wmDetected">—</span>
+      </div>
+      <div class="wm-row">
+        <span class="wm-key">Identifiant embarqué</span>
+        <span class="wm-val" id="wmId">—</span>
+      </div>
+      <div class="wm-row">
+        <span class="wm-key">Niveau de confiance</span>
+        <span class="wm-val" id="wmConf">—</span>
+      </div>
+      <div class="wm-row">
+        <span class="wm-key">Méthode de détection</span>
+        <span class="wm-val" id="wmMethod">—</span>
+      </div>
+    </div>
+
+    <button class="btn-reset" id="btnReset">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.1"/>
+      </svg>
+      Analyser un autre fichier
+    </button>
+  </div>
+</main>
+
+<footer>
+  Groupe 2 — Système de vérification de provenance C2PA &nbsp;·&nbsp; Projet microservices
+</footer>
+
+<script>
+  // ── Config ──
+  const API_URL = 'http://localhost:3000/api/verify';
+
+  // ── DOM refs ──
+  const dropZone   = document.getElementById('dropZone');
+  const fileInput  = document.getElementById('fileInput');
+  const filePreview= document.getElementById('filePreview');
+  const fileThumb  = document.getElementById('fileThumb');
+  const fileNameEl = document.getElementById('fileName');
+  const fileSizeEl = document.getElementById('fileSize');
+  const fileRemove = document.getElementById('fileRemove');
+  const btnAnalyze = document.getElementById('btnAnalyze');
+  const errorBox   = document.getElementById('errorBox');
+  const results    = document.getElementById('results');
+
+  let selectedFile = null;
+
+  // ── Drag & drop ──
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+  fileRemove.addEventListener('click', resetFile);
+
+  function setFile(file) {
+    selectedFile = file;
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatSize(file.size);
+    filePreview.classList.add('show');
+    btnAnalyze.disabled = false;
+
+    // Aperçu image
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        fileThumb.innerHTML = `<img src="${e.target.result}" alt="aperçu"/>`;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      fileThumb.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.8">
+        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+      </svg>`;
+    }
+  }
+
+  function resetFile() {
+    selectedFile = null;
+    fileInput.value = '';
+    filePreview.classList.remove('show');
+    fileThumb.innerHTML = '';
+    btnAnalyze.disabled = true;
+  }
+
+  function formatSize(b) {
+    if (b < 1024) return b + ' o';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' Ko';
+    return (b/(1024*1024)).toFixed(1) + ' Mo';
+  }
+
+  // ── Analyse ──
+  btnAnalyze.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    btnAnalyze.classList.add('loading');
+    btnAnalyze.disabled = true;
+    errorBox.classList.remove('show');
+    results.classList.remove('show');
+
+    const form = new FormData();
+    form.append('media', selectedFile);
+
+    try {
+      const res  = await fetch(API_URL, { method: 'POST', body: form });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) throw new Error(data.message || 'Erreur serveur');
+
+      displayResults(data);
+    } catch (err) {
+      errorBox.textContent = '❌ ' + (err.message || 'Impossible de joindre le serveur. Vérifiez que docker-compose est lancé.');
+      errorBox.classList.add('show');
+    } finally {
+      btnAnalyze.classList.remove('loading');
+      btnAnalyze.disabled = false;
+    }
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    results.classList.remove('show');
+    resetFile();
+    errorBox.classList.remove('show');
+  });
+
+  // ── Affichage résultats ──
+  function displayResults(data) {
+    const d = data.details;
+    const rawScore = parseInt(data.message.match(/\d+/)?.[0] || 0);
+    const label    = data.message.match(/\(([^)]+)\)/)?.[1] || '—';
+
+    // Score ring
+    const circumference = 251.2;
+    const offset = circumference - (rawScore / 100) * circumference;
+    const ringFill = document.getElementById('ringFill');
+    ringFill.style.strokeDashoffset = circumference; // reset
+    setTimeout(() => { ringFill.style.strokeDashoffset = offset; }, 50);
+
+    document.getElementById('scoreNum').textContent = rawScore + '%';
+
+    // Label pill + couleurs
+    const lblMap = {
+      'Fort':     'lbl-fort',
+      'Moyen':    'lbl-moyen',
+      'Faible':   'lbl-faible',
+      'Critique': 'lbl-critique'
+    };
+    const ringMap = {
+      'Fort':     'ring-fort',
+      'Moyen':    'ring-moyen',
+      'Faible':   'ring-faible',
+      'Critique': 'ring-critique'
+    };
+    const descMap = {
+      'Fort':     'La chaîne de confiance C2PA est complète. La signature cryptographique est valide.',
+      'Moyen':    'Aucun manifeste C2PA, mais un watermark a été détecté. Provenance partielle.',
+      'Faible':   'Aucune métadonnée de provenance trouvée. L\'origine du média est inconnue.',
+      'Critique': 'Manifeste C2PA présent mais signature invalide. Possible manipulation détectée.'
+    };
+
+    const pill = document.getElementById('labelPill');
+    pill.className = 'label-pill ' + (lblMap[label] || '');
+    document.getElementById('labelText').textContent = label;
+    ringFill.className = 'fill ' + (ringMap[label] || '');
+
+    document.getElementById('scoreTitle').textContent =
+      label === 'Fort' ? 'Média certifié' :
+      label === 'Critique' ? '⚠ Manipulation détectée' :
+      'Analyse terminée';
+    document.getElementById('scoreDesc').textContent = descMap[label] || data.message;
+
+    // Détails
+    document.getElementById('resFileName').textContent  = d.mediaName || '—';
+    document.getElementById('resTimestamp').textContent =
+      d.timestamp ? new Date(d.timestamp).toLocaleString('fr-FR') : '—';
+
+    const provEl = document.getElementById('resProvenance');
+    provEl.textContent = d.provenance || '—';
+    provEl.className   = 'detail-value ' + (d.provenance?.includes('détecté') ? 'ok' : 'no');
+
+    const assEl = document.getElementById('resAssertions');
+    if (d.assertions && d.assertions.length) {
+      assEl.innerHTML = `<div class="assertion-list">${
+        d.assertions.map(a => `<span class="assertion-tag">${a}</span>`).join('')
+      }</div>`;
+    } else {
+      assEl.textContent = 'Aucune assertion';
+      assEl.className = 'detail-value no';
+    }
+
+    // Watermark
+    const wm = d.watermark || {};
+    const wmDet = document.getElementById('wmDetected');
+    wmDet.textContent = wm.detected ? '✅ Oui' : '✗ Non';
+    wmDet.className   = 'wm-val ' + (wm.detected ? 'ok' : 'no');
+    document.getElementById('wmId').textContent     = wm.embeddedId || '—';
+    document.getElementById('wmConf').textContent   = wm.confidence ? Math.round(wm.confidence * 100) + '%' : '—';
+    document.getElementById('wmMethod').textContent = wm.method || '—';
+
+    results.classList.add('show');
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>

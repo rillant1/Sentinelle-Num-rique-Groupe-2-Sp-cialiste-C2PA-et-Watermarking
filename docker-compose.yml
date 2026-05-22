@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+
+  gateway:
+    build:
+      context: .
+      target: standard_service
+    container_name: api_gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - C2PA_SERVICE_URL=http://c2pa-service:3001
+      - SCORING_SERVICE_URL=http://scoring-service:3002
+      - WATERMARK_SERVICE_URL=http://watermark-service:3003
+      - PORT=3000
+    depends_on:
+      - c2pa-service
+      - scoring-service
+      - watermark-service
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - projet2-network
+    restart: always
+
+  c2pa-service:
+    build:
+      context: .
+      target: c2pa_heavy_service
+    container_name: c2pa_service
+    command: node src/services/c2paService.js
+    ports:
+      - "3001:3001"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - projet2-network
+    restart: always
+
+  watermark-service:
+    build:
+      context: .
+      target: standard_service
+    container_name: watermark_service
+    command: node src/services/watermarkService.js
+    ports:
+      - "3003:3003"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - projet2-network
+    restart: always
+
+  scoring-service:
+    build:
+      context: .
+      target: standard_service
+    container_name: scoring_service
+    command: node src/services/scoringService.js
+    ports:
+      - "3002:3002"
+    networks:
+      - projet2-network
+    restart: always
+
+volumes:
+  uploads_data:
+
+networks:
+  projet2-network:
+    driver: bridge
