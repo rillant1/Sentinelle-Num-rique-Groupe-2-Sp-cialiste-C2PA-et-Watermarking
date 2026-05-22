@@ -1,0 +1,1 @@
+# Sentinelle-Num-rique-Groupe-2-Sp-cialiste-C2PA-et-Watermarking
