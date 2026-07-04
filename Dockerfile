@@ -13,7 +13,7 @@ EXPOSE 3000 3002 3003
 # ==========================================
 # STAGE 2 : Image lourde — C2PA Service (Rust/C++)
 # ==========================================
-FROM node:18-bullseye-slim AS c2pa_heavy_service
+FROM node:18-bookworm-slim AS c2pa_heavy_service
 
 WORKDIR /app
 

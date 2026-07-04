@@ -25,21 +25,20 @@ app.post('/analyze', async (req, res) => {
     }
 
     try {
-        const { createC2pa } = require('@contentauth/c2pa-node');
-        const c2pa    = createC2pa();
+        const { Reader } = await import('@contentauth/c2pa-node');
         const buffer   = fs.readFileSync(filePath);
         const mimeType = getMimeType(filePath);
-        const result   = await c2pa.read({ buffer, mimeType });
+        const reader   = await Reader.fromAsset({ buffer, mimeType });
 
-        if (!result) {
+        if (!reader) {
             console.log(`[C2PA Service] Aucun manifeste pour ${fileName}`);
             return res.json({ hasManifest: false, isSignatureValid: false, issuer: null, assertions: [] });
         }
 
-        const activeManifest   = result.active_manifest;
-        const issuer           = activeManifest?.claim_generator || 'Inconnu';
+        const activeManifest   = reader.getActive();
+        const issuer           = activeManifest?.signature_info?.issuer || activeManifest?.claim_generator || 'Inconnu';
         const assertions       = activeManifest?.assertions?.map(a => a.label) || [];
-        const validationErrors = (result.validation_status || []).filter(
+        const validationErrors = (reader.json().validation_status || []).filter(
             s => s.code === 'claimSignature.mismatch' || s.code === 'assertion.dataHash.mismatch'
         );
         const isSignatureValid = validationErrors.length === 0;
